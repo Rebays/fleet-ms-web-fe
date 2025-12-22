@@ -39,3 +39,32 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#Terraform
+
+# Local .terraform folder (contains plugins and binary files)
+.terraform/
+
+# Terraform state files (these contain your "secrets" and infrastructure memory)
+*.tfstate
+*.tfstate.*
+
+*.tfplan
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Local variable files (your private configuration)
+*.tfvars
+*.tfvars.json
+
+# Override files (used for temporary local testing)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
