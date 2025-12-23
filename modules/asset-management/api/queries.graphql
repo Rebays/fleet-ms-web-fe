@@ -1,0 +1,20 @@
+query GetAssetList {
+  vehicles {
+    ...AssetSummary
+    lastServiceDate # Specific to the list view
+  }
+}
+
+query GetAssetDetail($id: ID!) {
+  vehicle(id: $id) {
+    ...AssetSummary
+    engineNumber
+    fuelType
+    purchaseDate
+    # Nested relations for the detail page
+    assignedDriver {
+      id
+      name
+    }
+  }
+}

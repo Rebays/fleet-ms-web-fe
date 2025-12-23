@@ -1,0 +1,10 @@
+fragment AssetSummary on Vehicle {
+  id
+  vin
+  make
+  model
+  year
+  status
+  plateNumber
+  currentOdometer
+}
