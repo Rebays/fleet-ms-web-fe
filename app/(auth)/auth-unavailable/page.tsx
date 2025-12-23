@@ -1,7 +1,12 @@
 // app/auth-unavailable/page.tsx
-import Link from "next/link";
+"use client"; // Required for the reload logic
 
 export default function AuthUnavailable() {
+  const handleRetry = () => {
+    // Force a hard reload to ensure the proxy middleware re-executes
+    window.location.href = "/";
+  };
+
   return (
     <div className="max-w-md w-full animate-in fade-in slide-in-from-bottom-4 duration-700 p-6">
       
@@ -28,7 +33,7 @@ export default function AuthUnavailable() {
           </p>
         </div>
 
-        {/* Updated User-Friendly Instructions */}
+        {/* User-Friendly Instructions */}
         <div className="space-y-4">
           <div className="flex gap-4 p-4 rounded-xl bg-gray-900/30 border border-gray-800/50">
             <div className="shrink-0 w-6 h-6 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center text-xs font-bold font-mono">!</div>
@@ -42,21 +47,21 @@ export default function AuthUnavailable() {
             <div className="shrink-0 w-6 h-6 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center text-xs font-bold font-mono">i</div>
             <div className="space-y-1">
               <p className="text-sm font-semibold text-gray-200">Operator Action</p>
-              <p className="text-xs text-gray-500 leading-relaxed">No action is required on your end. Please wait for the service to resume.</p>
+              <p className="text-xs text-gray-500 leading-relaxed">Please ensure the Auth Server container is running and attempt to reconnect.</p>
             </div>
           </div>
         </div>
 
         <div className="space-y-4">
-          <Link 
-            href="/"
+          <button 
+            onClick={handleRetry}
             className="group flex items-center justify-center gap-3 w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-blue-900/20"
           >
             <svg className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             <span>Attempt Reconnection</span>
-          </Link>
+          </button>
           
           <p className="text-center text-[10px] text-gray-600 uppercase tracking-widest">
             Gateway Status: <span className="text-red-600 font-bold animate-pulse">NO_RESPONSE</span>
@@ -67,7 +72,6 @@ export default function AuthUnavailable() {
       {/* Decorative Accents */}
       <div className="fixed top-8 left-8 w-12 h-12 border-t-2 border-l-2 border-gray-800 opacity-20" />
       <div className="fixed bottom-8 right-8 w-12 h-12 border-b-2 border-r-2 border-gray-800 opacity-20" />
-
     </div>
   );
 }
