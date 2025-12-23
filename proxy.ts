@@ -3,7 +3,7 @@
  * @description Core network boundary and routing controller for the SIG FMS application.
  * * This file implements the Next.js 16 Proxy convention to handle:
  * 1. Global Session Verification: Intercepts requests to validate user sessions 
- * against the external Auth Server (localhost:8000).
+ * against the external Auth Server.
  * 2. Route Guarding: Protects sensitive paths (e.g., /assets) by redirecting 
  * unauthenticated users to the login page.
  * 3. Intelligent Redirection: Automatically routes logged-in users from the 
