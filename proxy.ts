@@ -1,16 +1,6 @@
 /**
  * @file proxy.ts
- * @description Core network boundary and routing controller for the SIG FMS application.
- * * This file implements the Next.js 16 Proxy convention to handle:
- * 1. Global Session Verification: Intercepts requests to validate user sessions 
- * against the external Auth Server.
- * 2. Route Guarding: Protects sensitive paths (e.g., /assets) by redirecting 
- * unauthenticated users to the login page.
- * 3. Intelligent Redirection: Automatically routes logged-in users from the 
- * root path (/) to the assets dashboard.
- * 4. Resilient Error Handling: If the Auth Server is unreachable, the request 
- * is gracefully rewritten to a branded "Auth Unavailable" page instead of crashing.
- * * @runtime Node.js
+ * @description Core network boundary for SIG FMS with full diagnostic logging.
  */
 
 import { NextResponse } from 'next/server'
@@ -19,43 +9,70 @@ import type { NextRequest } from 'next/server'
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const cookie = request.headers.get('cookie') || ''
-  
-  // Strict environment variable assignment
   const authServer = process.env.AUTH_SERVER_URL
 
-  // 1. Prevent infinite loops for public assets/pages
-  if (pathname === '/auth-unavailable' || pathname === '/login') {
+  console.log(`[PROXY-LOG] Incoming Request: ${pathname}`);
+
+  // 1. Initial Bypass Check
+  if (pathname === '/auth-unavailable') {
+    console.log(`[PROXY-LOG] Bypassing proxy for error page: ${pathname}`);
     return NextResponse.next()
   }
 
-  // Safety Check: If the environment variable is missing, trigger the error state
+  // Configuration Check
   if (!authServer) {
-    console.error("Configuration Error: AUTH_SERVER_URL is not defined in environment variables.")
+    console.error("[PROXY-ERROR] Configuration Missing: AUTH_SERVER_URL is not defined.");
     return NextResponse.rewrite(new URL('/auth-unavailable', request.url))
   }
 
   try {
+    console.log(`[PROXY-LOG] Verifying heartbeat with Auth Server: ${authServer}/api/auth/get-session`);
+    
+    // 2. The Heartbeat Check
     const response = await fetch(`${authServer}/api/auth/get-session`, {
       headers: { cookie },
       cache: 'no-store',
       signal: AbortSignal.timeout(3000) 
     })
 
+    console.log(`[PROXY-LOG] Auth Server Status Code: ${response.status}`);
+    
     const session = await response.json()
+    console.log(`[PROXY-LOG] Session Data received:`, session);
 
-    // 2. Auth Logic: Redirect unauthenticated users
-    if ((!session || response.status !== 200) && pathname.startsWith('/assets')) {
+    const isAuthenticated = session && response.status === 200
+    console.log(`[PROXY-LOG] Authentication Verified: ${isAuthenticated}`);
+
+    // 3. Login Page Logic
+    if (pathname === '/login') {
+      if (isAuthenticated) {
+        console.log(`[PROXY-LOG] User already logged in. Redirecting /login -> /assets`);
+        return NextResponse.redirect(new URL('/assets', request.url))
+      }
+      console.log(`[PROXY-LOG] Server is UP. Allowing access to /login`);
+      return NextResponse.next()
+    }
+
+    // 4. Protected Route Logic
+    if (!isAuthenticated && pathname.startsWith('/assets')) {
+      console.log(`[PROXY-LOG] Access Denied for ${pathname}. Redirecting to /login`);
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // 3. Root Logic: Send authenticated users to dashboard
-    if (session && pathname === '/') {
-      return NextResponse.redirect(new URL('/assets', request.url))
+    // 5. Root URL Handling
+    if (pathname === '/') {
+      const destination = isAuthenticated ? '/assets' : '/login';
+      console.log(`[PROXY-LOG] Root access. Routing user to: ${destination}`);
+      return NextResponse.redirect(new URL(destination, request.url))
     }
 
+    console.log(`[PROXY-LOG] No specific rule matched for ${pathname}. Proceeding...`);
+
   } catch (error) {
-    console.error("Proxy Auth Fetch Error:", error)
-    // 4. Fail-safe: Rewrite to your custom error page
+    // 6. Total Lockdown on Error
+    console.error("[PROXY-CRITICAL] Auth Server Unreachable or Timeout. Executing Lockdown.");
+    console.error(`[PROXY-DEBUG] Error Details: ${error instanceof Error ? error.message : String(error)}`);
+    
     return NextResponse.rewrite(new URL('/auth-unavailable', request.url))
   }
 
@@ -63,7 +80,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }
