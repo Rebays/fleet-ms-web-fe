@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { authClient } from "@/better-auth/auth-client"; 
+import { authRelay } from "@/better-auth/auth-server"; 
 import { useRouter } from "next/navigation";
 import { Loader2, ArrowRight, ShieldAlert, Info, ShieldCheck } from "lucide-react";
 
@@ -19,7 +19,7 @@ export default function LoginPage() {
 
     const fullEmail = email.includes("@") ? email : `${email}@solomons.gov.sb`;
 
-    await authClient.signIn.email({
+    await authRelay.signIn.email({
       email: fullEmail,
       password,
       callbackURL: "/assets",
