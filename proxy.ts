@@ -19,18 +19,25 @@ import type { NextRequest } from 'next/server'
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const cookie = request.headers.get('cookie') || ''
-  const authServer = "http://127.0.0.1:8000"
+  
+  // Strict environment variable assignment
+  const authServer = process.env.AUTH_SERVER_URL
 
   // 1. Prevent infinite loops for public assets/pages
   if (pathname === '/auth-unavailable' || pathname === '/login') {
     return NextResponse.next()
   }
 
+  // Safety Check: If the environment variable is missing, trigger the error state
+  if (!authServer) {
+    console.error("Configuration Error: AUTH_SERVER_URL is not defined in environment variables.")
+    return NextResponse.rewrite(new URL('/auth-unavailable', request.url))
+  }
+
   try {
     const response = await fetch(`${authServer}/api/auth/get-session`, {
       headers: { cookie },
       cache: 'no-store',
-      // Fail-fast timeout to prevent hanging requests if server is down
       signal: AbortSignal.timeout(3000) 
     })
 
@@ -48,7 +55,7 @@ export async function proxy(request: NextRequest) {
 
   } catch (error) {
     console.error("Proxy Auth Fetch Error:", error)
-    // 4. Fail-safe: Rewrite to your custom error page to prevent UI crash
+    // 4. Fail-safe: Rewrite to your custom error page
     return NextResponse.rewrite(new URL('/auth-unavailable', request.url))
   }
 
@@ -57,12 +64,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /* * Applies proxy logic to all routes except:
-     * - API routes
-     * - Static files (_next/static)
-     * - Image optimization (_next/image)
-     * - Favicon
-     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }
