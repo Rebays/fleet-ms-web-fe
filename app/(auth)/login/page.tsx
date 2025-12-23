@@ -1,40 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { authRelay } from "@/better-auth/auth-server"; 
-import { useRouter } from "next/navigation";
+import { useActionState } from "react";
 import { Loader2, ArrowRight, ShieldAlert, Info, ShieldCheck } from "lucide-react";
+import { signInAction } from "@/app/actions/auth";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
-
-    const fullEmail = email.includes("@") ? email : `${email}@solomons.gov.sb`;
-
-    await authRelay.signIn.email({
-      email: fullEmail,
-      password,
-      callbackURL: "/assets",
-    }, {
-      onRequest: () => setIsLoading(true),
-      onError: (ctx) => {
-        setError(ctx.error.message || "Invalid credentials");
-        setIsLoading(false);
-      },
-      onSuccess: () => {
-        router.push("/assets");
-        router.refresh();
-      }
-    });
-  };
+  // state holds the return value from the server action (like errors)
+  // isPending replaces your manual isLoading state
+  const [state, formAction, isPending] = useActionState(signInAction, null);
 
   return (
     <div className="w-full max-w-sm mx-auto space-y-6 animate-in fade-in duration-500">
@@ -48,11 +21,11 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <form onSubmit={handleLogin} className="space-y-4">
-        {error && (
+      <form action={formAction} className="space-y-4">
+        {state?.error && (
           <div className="flex items-center gap-2 p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
             <ShieldAlert className="w-4 h-4 text-red-500" />
-            <p className="text-xs text-red-500 font-medium">{error}</p>
+            <p className="text-xs text-red-500 font-medium">{state.error}</p>
           </div>
         )}
 
@@ -62,10 +35,9 @@ export default function LoginPage() {
               Domain Username / Email
             </label>
             <input
+              name="email"
               type="text"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-gray-900/40 border border-gray-800 text-white px-4 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all placeholder:text-gray-700"
               placeholder="username@solomons.gov.sb"
             />
@@ -76,10 +48,9 @@ export default function LoginPage() {
               Password
             </label>
             <input
+              name="password"
               type="password"
               required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-gray-900/40 border border-gray-800 text-white px-4 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all placeholder:text-gray-700"
               placeholder="••••••••••••••••"
             />
@@ -88,10 +59,10 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isPending}
           className="w-full group relative flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
         >
-          {isLoading ? (
+          {isPending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <>
@@ -104,7 +75,6 @@ export default function LoginPage() {
 
       {/* Notices Section */}
       <div className="space-y-3">
-        {/* Authorization Notice */}
         <div className="p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg flex items-start gap-3">
           <ShieldCheck className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
           <p className="text-[11px] leading-relaxed text-gray-400">
@@ -112,7 +82,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* ICTSU Support Notice */}
         <div className="p-3 bg-gray-900/20 border border-gray-800/50 rounded-lg flex items-start gap-3">
           <Info className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
           <div className="space-y-1">
