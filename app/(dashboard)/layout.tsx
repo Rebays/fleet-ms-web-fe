@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
   Truck, 
+  Users, 
   Wrench, 
   FileText, 
   MapPin, 
@@ -23,6 +24,7 @@ export default function DashboardLayout({
   const menuItems = [
     { name: 'Overview', href: '/', icon: LayoutDashboard },
     { name: 'Vehicles', href: '/vehicles', icon: Truck },
+    { name: 'Drivers', href: '/drivers', icon: Users },
     { name: 'Maintenance', href: '/maintenance', icon: Wrench },
     { name: 'Reports', href: '/reports', icon: FileText },
     { name: 'Live Map', href: '/livemap', icon: MapPin },
