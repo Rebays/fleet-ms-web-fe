@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { Loader2, ArrowRight, ShieldAlert, Info, ShieldCheck } from "lucide-react";
-import { signInAction } from "@/app/actions/auth";
+import { signInAction } from "@/app/actions/signin";
 
 export default function LoginPage() {
   // state holds the return value from the server action (like errors)
