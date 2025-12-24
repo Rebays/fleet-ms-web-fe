@@ -128,13 +128,6 @@ export default function DashboardLayout({
               Are you sure you want to sign out of the Fleet Management System?
             </p>
 
-            {/* Error display if server action fails
-            {state?.error && (
-              <p className="text-xs text-red-500 mb-4 font-medium italic">
-                {state.error}
-              </p>
-            )} */}
-
             <div className="flex gap-3">
               <button 
                 type="button"
