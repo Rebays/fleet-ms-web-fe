@@ -11,12 +11,24 @@ export async function proxy(request: NextRequest) {
   const isLoginPage = pathname === '/login';
   const isPublicAsset = pathname.startsWith('/_next') || pathname.includes('.');
   
+  
   // 2. Logic: If no cookie AND not already on login page, send to login
   if (!sessionCookie && !isLoginPage && !isPublicAsset) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // 3. Logic: If cookie exists AND user is trying to go to /login, 
+  // 3. LOGIC: User is at the root
+  if (pathname === '/') {
+    if (sessionCookie) {
+      // Logged in? Send to /assets
+      return NextResponse.redirect(new URL('/assets', request.url));
+    } else {
+      // Not logged in? Send to /login
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  }
+
+  // 4. Logic: If cookie exists AND user is trying to go to /login, 
   // send them to /assets (or home) instead since they are already auth'd.
   if (sessionCookie && isLoginPage) {
     return NextResponse.redirect(new URL('/assets', request.url));
