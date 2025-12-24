@@ -17,21 +17,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // 3. LOGIC: User is at the root
-  if (pathname === '/') {
-    if (sessionCookie) {
-      // Logged in? Send to /assets
-      return NextResponse.redirect(new URL('/assets', request.url));
-    } else {
-      // Not logged in? Send to /login
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-  }
-
   // 4. Logic: If cookie exists AND user is trying to go to /login, 
-  // send them to /assets (or home) instead since they are already auth'd.
+  // send them to / (or home) instead since they are already auth'd.
   if (sessionCookie && isLoginPage) {
-    return NextResponse.redirect(new URL('/assets', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   // Otherwise, proceed as normal
