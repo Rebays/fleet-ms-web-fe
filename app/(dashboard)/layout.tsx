@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useActionState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -12,8 +12,10 @@ import {
   MapPin, 
   Settings, 
   LogOut,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
+import { signOutAction } from "@/app/actions/signout";
 
 export default function DashboardLayout({
   children,
@@ -22,6 +24,9 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  
+  // Connect the server action to the UI state
+  const [state, formAction, isPending] = useActionState(signOutAction, null);
 
   const menuItems = useMemo(() => [
     { name: 'Overview', href: '/', icon: LayoutDashboard },
@@ -33,25 +38,16 @@ export default function DashboardLayout({
     { name: 'Settings', href: '/settings', icon: Settings },
   ], []);
 
-  // useMemo ensures currentTitle only recalculates when pathname actually settles
   const currentTitle = useMemo(() => {
     const item = menuItems.find(m => m.href === pathname);
     if (item) return item.name;
-    
-    // Fallback for sub-routes (e.g., /vehicles/123)
     const partialMatch = menuItems.find(m => m.href !== '/' && pathname.startsWith(m.href));
     return partialMatch ? partialMatch.name : 'Overview';
   }, [pathname, menuItems]);
 
-  // Updates the Browser Tab Title
   useEffect(() => {
     document.title = `${currentTitle} | FleetMS`;
   }, [currentTitle]);
-
-  const handleLogout = () => {
-    console.log("Logged out");
-    setIsLogoutModalOpen(false);
-  };
 
   return (
     <div className="flex h-screen bg-black">
@@ -131,19 +127,38 @@ export default function DashboardLayout({
             <p className="text-gray-400 text-sm mb-6">
               Are you sure you want to sign out of the Fleet Management System?
             </p>
+
+            {/* Error display if server action fails
+            {state?.error && (
+              <p className="text-xs text-red-500 mb-4 font-medium italic">
+                {state.error}
+              </p>
+            )} */}
+
             <div className="flex gap-3">
               <button 
+                type="button"
+                disabled={isPending}
                 onClick={() => setIsLogoutModalOpen(false)}
-                className="flex-1 px-4 py-2 rounded-lg bg-gray-900 text-gray-300 hover:bg-gray-800 transition-colors text-sm font-medium"
+                className="flex-1 px-4 py-2 rounded-lg bg-gray-900 text-gray-300 hover:bg-gray-800 transition-colors text-sm font-medium disabled:opacity-50"
               >
                 Cancel
               </button>
-              <button 
-                onClick={handleLogout}
-                className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-sm font-medium"
-              >
-                Sign Out
-              </button>
+              
+              {/* Trigger the Server Action using a form */}
+              <form action={formAction} className="flex-1">
+                <button 
+                  type="submit"
+                  disabled={isPending}
+                  className="w-full px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isPending ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    'Sign Out'
+                  )}
+                </button>
+              </form>
             </div>
           </div>
         </div>
