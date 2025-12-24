@@ -2,6 +2,7 @@
 
 import { authRelay } from "@/better-auth/auth-server";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 /**
  * Maps complex auth errors to user-friendly strings.
@@ -24,30 +25,85 @@ function getErrorMessage(error: any): string {
 }
 
 export async function signInAction(prevState: any, formData: FormData) {
+  console.log('[SIGNIN ACTION] --')
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
 
   // Domain logic
   const fullEmail = email.includes("@") ? email : `${email}@solomons.gov.sb`;
 
-  // 1. Attempt Sign-In
-  const { data, error } = await authRelay.signIn.email({
-    email: fullEmail,
-    password,
-  });
+  let authResponse: any = null;
+  let isSuccessful = false;
 
-  // 2. Error Handling
-  if (error) {
-    const finalMessage = getErrorMessage(error);
-    
-    // Log details for the admin in the terminal
-    console.error(`[Auth Debug] Status: ${error.status} | Code: ${error.code} | Msg: ${finalMessage}`);
-    
-    return { error: finalMessage };
+  // 1. Attempt Sign-In with Offline Protection
+  try {
+    authResponse = await authRelay.signIn.email({
+      email: fullEmail,
+      password,
+      fetchOptions: {
+        onResponse: async ({ response }) => {
+          console.log('[SIGNIN ACTION] Auth Server Successfully responds.')
+          const setCookieHeader = response.headers.get("set-cookie");
+          const cookieStore = await cookies();
+          if (setCookieHeader) {
+            const cookiesToSet = setCookieHeader.split(/,(?=[^;]+;)/);
+
+            cookiesToSet.forEach((cookieString) => {
+              const parts = cookieString.split(";").map(p => p.trim());
+              const [nameValue, ...attributes] = parts;
+              const [name, value] = nameValue.split("=");
+                      
+              const options: any = {};
+
+              attributes.forEach(attr => {
+                const [key, val] = attr.split("=");
+                const lowerKey = key.toLowerCase();
+                
+                if (lowerKey === "httponly") options.httpOnly = true;
+                if (lowerKey === "secure") {
+                  options.secure = process.env.NODE_ENV === "production";
+                }
+                if (lowerKey === "path") options.path = val || "/";
+                if (lowerKey === "samesite") options.sameSite = val.toLowerCase();
+                if (lowerKey === "max-age") options.maxAge = parseInt(val);
+                if (lowerKey === "expires") {
+                  const d = new Date(val);
+                  if (!isNaN(d.getTime())) options.expires = d;
+                }
+                if (lowerKey === "domain") options.domain = val;
+              });
+
+              if (process.env.NODE_ENV === "development") {
+                options.secure = false;
+              }
+                      
+              cookieStore.set(name, value, options);
+            });
+          }
+        }
+      }
+    });
+
+    // Check for logical auth errors returned by the relay
+    if (authResponse.error) {
+      const finalMessage = getErrorMessage(authResponse.error);
+      console.error(`[Auth Debug] Status: ${authResponse.error.status} | Msg: ${finalMessage}`);
+      return { error: finalMessage };
+    }
+
+    isSuccessful = true;
+
+  } catch (err: any) {
+    // This catches network failures (e.g., Auth Server is offline)
+    console.error('[SIGNIN ACTION] Network Error:', err.message);
+    return { error: "Authentication server is currently unreachable. Please try again later." };
   }
 
-  // 3. Success Redirect
-  // Kept outside try/catch to avoid the NEXT_REDIRECT issue
-  console.log(data)
-  redirect("/assets");
+  // 2. Success Redirect (Keep outside try/catch)
+  if (isSuccessful) {
+    console.log(authResponse.data);
+    console.log(`User ${authResponse.data.user.name} successfully authenticated.`);
+    console.log('we are redirecting user to /assets');
+    redirect("/assets");
+  }
 }
