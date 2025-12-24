@@ -104,6 +104,6 @@ export async function signInAction(prevState: any, formData: FormData) {
     console.log(authResponse.data);
     console.log(`User ${authResponse.data.user.name} successfully authenticated.`);
     console.log('we are redirecting user to /assets');
-    redirect("/assets");
+    redirect("/");
   }
 }
