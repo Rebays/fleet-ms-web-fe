@@ -3,6 +3,8 @@ import type { NextRequest } from 'next/server'
 
 export async function proxy(request: NextRequest) {
 
+  console.log(`[PROXY] - Proxy fires at: ${new Date().toISOString()}`);
+
   // 1. Get the specific session cookie
   const sessionCookie = request.cookies.get('fms.session_token') || ''
   const { pathname } = request.nextUrl;
