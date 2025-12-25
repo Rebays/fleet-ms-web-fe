@@ -45,6 +45,7 @@ export async function signInAction(prevState: any, formData: FormData) {
           console.log('[SIGNIN ACTION] Auth Server Successfully responds.')
           const setCookieHeader = response.headers.get("set-cookie");
           const cookieStore = await cookies();
+
           if (setCookieHeader) {
             const cookiesToSet = setCookieHeader.split(/,(?=[^;]+;)/);
 
@@ -101,9 +102,22 @@ export async function signInAction(prevState: any, formData: FormData) {
 
   // 2. Success Redirect (Keep outside try/catch)
   if (isSuccessful) {
+
+    // --- SET GHOST COOKIE HERE ---
+    // Moving it here ensures it is called in the main execution thread of the Action
+    const cookieStore = await cookies();
+    cookieStore.set("fms.last_user", "true", {
+      maxAge: 60 * 60 * 24 * 30, // 30 Days
+      path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+    // ----------------------------
+
     console.log(authResponse.data);
     console.log(`User ${authResponse.data.user.name} successfully authenticated.`);
-    console.log('we are redirecting user to /assets');
+    console.log('we are redirecting user to /');
     redirect("/");
   }
 }
