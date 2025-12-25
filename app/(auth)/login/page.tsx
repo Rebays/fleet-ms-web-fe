@@ -1,13 +1,16 @@
 "use client";
 
 import { useActionState } from "react";
-import { Loader2, ArrowRight, ShieldAlert, Info, ShieldCheck } from "lucide-react";
+import { useSearchParams } from "next/navigation"; // Added this
+import { Loader2, ArrowRight, ShieldAlert, Info, ShieldCheck, Clock } from "lucide-react";
 import { signInAction } from "@/app/actions/signin";
 
 export default function LoginPage() {
-  // state holds the return value from the server action (like errors)
-  // isPending replaces your manual isLoading state
   const [state, formAction, isPending] = useActionState(signInAction, null);
+  
+  // Hook to grab the ?error=expired or ?session=expired from URL
+  const searchParams = useSearchParams();
+  const sessionError = searchParams.get("error") === "expired" || searchParams.get("session") === "expired";
 
   return (
     <div className="w-full max-w-sm mx-auto space-y-6 animate-in fade-in duration-500">
@@ -22,6 +25,18 @@ export default function LoginPage() {
       </div>
 
       <form action={formAction} className="space-y-4">
+        
+        {/* NEW: Session Expired Alert */}
+        {sessionError && (
+          <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <Clock className="w-4 h-4 text-amber-500" />
+            <p className="text-xs text-amber-500 font-medium">
+              Your session has timed out. Please sign in again.
+            </p>
+          </div>
+        )}
+
+        {/* Existing Auth Errors */}
         {state?.error && (
           <div className="flex items-center gap-2 p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
             <ShieldAlert className="w-4 h-4 text-red-500" />
