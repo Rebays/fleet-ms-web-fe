@@ -9,10 +9,19 @@ export async function proxy(request: NextRequest) {
   const sessionCookie = request.cookies.get('fms.session_token') || ''
   const { pathname } = request.nextUrl;
 
+  const wasLoggedIn = request.cookies.has("fms.last_user");
+  const hasCookie = request.cookies.has("fms.session_token");
+  
   // public paths
   const isLoginPage = pathname === '/login';
   const isPublicAsset = pathname.startsWith('/_next') || pathname.includes('.');
   
+  console.log(`[PROXY] - user was previously logged in: ${wasLoggedIn}`)
+  console.log(`[PROXY] - user has cookie: ${hasCookie}`)
+  if(wasLoggedIn == true && hasCookie == false && !isLoginPage){
+    return NextResponse.redirect(new URL('/login?session=expired', request.url));
+    console.log('user does not have cookie, but was previously logged in')
+  }
   
   // 2. Logic: If no cookie AND not already on login page, send to login
   if (!sessionCookie && !isLoginPage && !isPublicAsset) {
