@@ -5,6 +5,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { authRelay } from "@/better-auth/auth-server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { IdleTimer } from '@/components/auth/IdleTimer';
 
 
 
@@ -12,47 +13,50 @@ export default async function DashboardLayout({ children }: { children: React.Re
   console.log(`[DASHBOARD LAYOUT] - Fires | ${new Date().toISOString()}`);
   
   const h = await headers();
-
   const cookieHeader = h.get("cookie") || "";
-  console.log(`cookie: ${cookieHeader}`)
   const decodedCookie = decodeURIComponent(cookieHeader!);
-  console.log(`decoded cookie: ${decodedCookie}`)
 
+  let sessionRemoved = false;
+  let sessionExpired = false;
 
-  // The session check call
-  const session  = await authRelay.getSession({
-    fetchOptions: {
-      headers: { 
-        "cookie": decodedCookie, // pass the decoded cookie.
-      },
-      signal: AbortSignal.timeout(5000),
-      onRequest: () => {
-        console.log(`[DASHBOARD LAYOUT] - authRelay calling Auth Server...`);
-      },
+  try {
+
+    const {data: session, error}  = await authRelay.getSession({
+      fetchOptions: {
+        headers: { 
+          "cookie": decodedCookie, // pass the decoded cookie.
+        },
+        signal: AbortSignal.timeout(5000),
+        onRequest: () => {
+          console.log(`[DASHBOARD LAYOUT] - authRelay calling Auth Server...`);
+        },
+      }
+    });
+
+    if(error){
+      console.log(error.message)
+      console.log('BERYY')
     }
-  });
 
-  // 1. Check if the session is MISSING
-  if (!session.data?.session.token) {
-    console.log(`[AUTH] - session is ${session.data?.session.token}`)
-    // send to route
-    redirect("/api/auth/clear-session?reason=missing");
-  } 
+    sessionRemoved = !session?.session;
+    if(!sessionRemoved){
+      const expiresAt = new Date(session!.session.expiresAt);
+      const now = new Date();
+      if (expiresAt < now)
+        sessionExpired = true;
+    }
 
-  // 2. Check if the session is EXPIRED
-  const expiresAt = new Date(session.data.session.expiresAt);
-  const now = new Date();
-
-  if (expiresAt < now) {
-    console.log(`[AUTH] - Token exists but expired at ${expiresAt.toISOString()}. Clearing...`);
-  
-    // We send them to the same "Janitor" route to wipe the cookie
-    redirect("/api/auth/clear-session?reason=expired");
+    
+  } catch (error) {
+    console.log(`[DASHBOARD LAYOUT] - could not contact auth server. Redirecting to auth-server-down route to delete cookie in the browser.`)
+    redirect("/api/auth/auth-server-down?error=auth_service_down");
   }
+  
+  if(sessionRemoved)
+    redirect("/api/auth/clear-session?session=removed");
 
-  // 3. SUCCESS: Session exists and is still fresh
-  console.log(`[AUTH] - Session active for: ${session.data.user.email}`);
-
+  if(sessionExpired)
+    redirect("/api/auth/clear-session?session=expired");
   
   return (
     <div className="flex h-screen bg-black">
@@ -63,6 +67,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
           {children}
         </div>
       </main>
+
+      <IdleTimer /> {/* Sitting silently in the background */}
     </div>
   );
 }
