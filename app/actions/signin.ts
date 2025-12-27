@@ -24,100 +24,96 @@ function getErrorMessage(error: any): string {
   return error.message ?? error.statusText ?? "An unexpected error occurred.";
 }
 
+
+async function setCookie(response: Response): Promise<void>{
+  // gets set-cookie header from response obj sent from better-auth
+  const setCookieHeader = response.headers.get("set-cookie");
+  console.log(`set-cookie header: ${setCookieHeader}`)
+  console.log(`set-cookie header type: ${typeof(typeof(setCookieHeader))}`)
+
+  // storage to set returned cookie from auth server
+  const cookieStore = await cookies();
+
+  // checking if the set cookie header exists
+  if (setCookieHeader) {
+
+    // if there are multiple cookies, we split them here
+    const cookiesToSet = setCookieHeader.split(/,(?=[^;]+;)/);
+
+
+    cookiesToSet.forEach((cookieString) => {
+      const parts = cookieString.split(";").map(p => p.trim());
+      const [nameValue, ...attributes] = parts;
+      const [name, value] = nameValue.split("=");
+      const options: any = {};
+
+      attributes.forEach(attr => {
+        const [key, val] = attr.split("=");
+        const lowerKey = key.toLowerCase();
+        
+        if (lowerKey === "httponly") options.httpOnly = true;
+        if (lowerKey === "secure") {
+          options.secure = process.env.NODE_ENV === "production";
+        }
+        if (lowerKey === "path") options.path = val || "/";
+        if (lowerKey === "samesite") options.sameSite = val.toLowerCase();
+        if (lowerKey === "max-age") options.maxAge = parseInt(val);
+        if (lowerKey === "expires") {
+          const d = new Date(val);
+          if (!isNaN(d.getTime())) options.expires = d;
+        }
+        if (lowerKey === "domain") options.domain = val;
+      });
+
+      if (process.env.NODE_ENV === "development") {
+        options.secure = false;
+      }
+              
+      cookieStore.set(name, value, options);
+    });
+  }
+}
+
+
 export async function signInAction(prevState: any, formData: FormData) {
-  console.log('[SIGNIN ACTION] --')
+  
+   
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-
-  // Domain logic
   const fullEmail = email.includes("@") ? email : `${email}@solomons.gov.sb`;
 
-  let authResponse: any = null;
-  let isSuccessful = false;
-
-  // 1. Attempt Sign-In with Offline Protection
   try {
-    authResponse = await authRelay.signIn.email({
+    const {data , error} = await authRelay.signIn.email({
       email: fullEmail,
       password,
       fetchOptions: {
-        onResponse: async ({ response }) => {
-          console.log('[SIGNIN ACTION] Auth Server Successfully responds.')
-          const setCookieHeader = response.headers.get("set-cookie");
-          const cookieStore = await cookies();
-
-          if (setCookieHeader) {
-            const cookiesToSet = setCookieHeader.split(/,(?=[^;]+;)/);
-
-            cookiesToSet.forEach((cookieString) => {
-              const parts = cookieString.split(";").map(p => p.trim());
-              const [nameValue, ...attributes] = parts;
-              const [name, value] = nameValue.split("=");
-                      
-              const options: any = {};
-
-              attributes.forEach(attr => {
-                const [key, val] = attr.split("=");
-                const lowerKey = key.toLowerCase();
-                
-                if (lowerKey === "httponly") options.httpOnly = true;
-                if (lowerKey === "secure") {
-                  options.secure = process.env.NODE_ENV === "production";
-                }
-                if (lowerKey === "path") options.path = val || "/";
-                if (lowerKey === "samesite") options.sameSite = val.toLowerCase();
-                if (lowerKey === "max-age") options.maxAge = parseInt(val);
-                if (lowerKey === "expires") {
-                  const d = new Date(val);
-                  if (!isNaN(d.getTime())) options.expires = d;
-                }
-                if (lowerKey === "domain") options.domain = val;
-              });
-
-              if (process.env.NODE_ENV === "development") {
-                options.secure = false;
-              }
-                      
-              cookieStore.set(name, value, options);
-            });
-          }
+        onResponse: async ({ response }) => { 
+          setCookie(response)
         }
       }
     });
 
-    // Check for logical auth errors returned by the relay
-    if (authResponse.error) {
-      const finalMessage = getErrorMessage(authResponse.error);
-      console.error(`[Auth Debug] Status: ${authResponse.error.status} | Msg: ${finalMessage}`);
-      return { error: finalMessage };
-    }
-
-    isSuccessful = true;
+    if (error) 
+      return { error: getErrorMessage(error) };
 
   } catch (err: any) {
-    // This catches network failures (e.g., Auth Server is offline)
-    console.error('[SIGNIN ACTION] Network Error:', err.message);
+    console.error('[SIGNIN ACTION] Network Error: Could not contact auth server', err.message);
     return { error: "Authentication server is currently unreachable. Please try again later." };
   }
 
+
+  const cookieStore = await cookies();
+  cookieStore.set("fms.last_user", "true", {
+    maxAge: 60 * 60 * 24 * 30, // 30 Days
+    path: "/",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+
   // 2. Success Redirect (Keep outside try/catch)
-  if (isSuccessful) {
+  // redirect internals throws a NEXT_REDIRECT error, putting
+  // it in a try-catch will cause the catch block to handle it
+  redirect("/");
 
-    // --- SET GHOST COOKIE HERE ---
-    // Moving it here ensures it is called in the main execution thread of the Action
-    const cookieStore = await cookies();
-    cookieStore.set("fms.last_user", "true", {
-      maxAge: 60 * 60 * 24 * 30, // 30 Days
-      path: "/",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-    // ----------------------------
-
-    console.log(authResponse.data);
-    console.log(`User ${authResponse.data.user.name} successfully authenticated.`);
-    console.log('we are redirecting user to /');
-    redirect("/");
-  }
 }

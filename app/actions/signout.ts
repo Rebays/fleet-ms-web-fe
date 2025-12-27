@@ -6,6 +6,7 @@ import { authRelay } from "@/better-auth/auth-server";
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 
+
 export async function signOutAction(prevState: any) {
   console.log('[SIGNOUT ACTION] --');
 
@@ -47,5 +48,5 @@ export async function signOutAction(prevState: any) {
 
   // 5. Redirect
   console.log('[SIGNOUT ACTION] Redirecting to /login');
-  redirect("/login");
+  redirect("/login?session=logout");
 }
