@@ -19,7 +19,7 @@ export async function proxy(request: NextRequest) {
   console.log(`[PROXY] - user was previously logged in: ${wasLoggedIn}`)
   console.log(`[PROXY] - user has cookie: ${hasCookie}`)
   if(wasLoggedIn == true && hasCookie == false && !isLoginPage){
-    return NextResponse.redirect(new URL('/login?session=expired', request.url));
+    return NextResponse.redirect(new URL('/login?session=logout', request.url));
   }
   
   // 2. Logic: If no cookie AND not already on login page, send to login
