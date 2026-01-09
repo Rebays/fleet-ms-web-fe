@@ -6,11 +6,11 @@ export async function proxy(request: NextRequest) {
   console.log(`[PROXY] - Proxy fires at: ${new Date().toISOString()}`);
 
   // 1. Get the specific session cookie
-  const sessionCookie = request.cookies.get('fms.session_token') || ''
+  const sessionCookie = request.cookies.get('better-auth.session_token') || ''
   const { pathname } = request.nextUrl;
 
   const wasLoggedIn = request.cookies.has("fms.last_user");
-  const hasCookie = request.cookies.has("fms.session_token");
+  const hasCookie = request.cookies.has("better-auth.session_token");
   
   // public paths
   const isLoginPage = pathname === '/login';

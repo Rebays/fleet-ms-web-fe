@@ -12,7 +12,7 @@ export function IdleTimer() {
   const router = useRouter();
 
   // Thresholds set to 15 seconds
-  const IDLE_THRESHOLD = 15 * 1000; 
+  const IDLE_THRESHOLD = 60 * 60 * 1000; 
   const WARNING_WINDOW = 15; 
 
   const autoLogout = useCallback(() => {

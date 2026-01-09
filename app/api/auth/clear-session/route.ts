@@ -1,4 +1,4 @@
-import { authRelay } from "@/better-auth/auth-server";
+import { authRelay } from "@/better-auth/auth-client";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { NextRequest } from "next/server"; 

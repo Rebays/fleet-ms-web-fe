@@ -2,7 +2,7 @@
 
 // todo: When a session expires, attempt to sign-out crashes. fix this.
 
-import { authRelay } from "@/better-auth/auth-server";
+import { authRelay } from "@/better-auth/auth-client";
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 

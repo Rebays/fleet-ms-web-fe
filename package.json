@@ -9,7 +9,8 @@
     "standalone:start": "node .next/standalone/server.js",
     "docker:build": "docker build -t sig-fms-web-img:v1.0.0 -t sig-fms-web-img:latest --build-arg VERSION=1.0.0  --platform linux/amd64 --no-cache .",
     "docker:run": "docker run -d -p 3000:3000 --name sig-fms-web --env-file .env.docker --restart always sig-fms-web-img",
-    "lint": "eslint"
+    "lint": "eslint",
+    "codegen": "graphql-codegen --config codegen.ts"
   },
   "dependencies": {
     "better-auth": "^1.4.7",
@@ -21,8 +22,8 @@
     "recharts": "^3.6.0"
   },
   "devDependencies": {
-    "@graphql-codegen/cli": "^6.1.0",
-    "@graphql-codegen/client-preset": "^5.2.2",
+    "@graphql-codegen/cli": "6.1.0",
+    "@graphql-codegen/client-preset": "5.2.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -30,6 +31,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@graphql-codegen/introspection": "5.0.0"
   }
 }

@@ -1,8 +1,9 @@
 "use server";
 
-import { authRelay } from "@/better-auth/auth-server";
+import { authRelay } from "@/better-auth/auth-client";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { Cossette_Texte } from "next/font/google";
 
 /**
  * Maps complex auth errors to user-friendly strings.
@@ -87,14 +88,22 @@ export async function signInAction(prevState: any, formData: FormData) {
       email: fullEmail,
       password,
       fetchOptions: {
+        headers: {
+          // set a real origin for server-side requests
+          origin: process.env.BASE_URL!,
+        },
         onResponse: async ({ response }) => { 
           setCookie(response)
-        }
+        },
       }
     });
 
-    if (error) 
+  
+
+    if (error) {
+      console.error('[SIGNIN ACTION] Authentication Error:', error);
       return { error: getErrorMessage(error) };
+    }
 
   } catch (err: any) {
     console.error('[SIGNIN ACTION] Network Error: Could not contact auth server', err.message);
@@ -110,6 +119,9 @@ export async function signInAction(prevState: any, formData: FormData) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
   });
+
+
+ 
 
   // 2. Success Redirect (Keep outside try/catch)
   // redirect internals throws a NEXT_REDIRECT error, putting

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { authRelay } from "@/better-auth/auth-server";
+import { authRelay } from "@/better-auth/auth-client";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { IdleTimer } from '@/components/auth/IdleTimer';
@@ -30,6 +30,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
         onRequest: () => {
           console.log(`[DASHBOARD LAYOUT] - authRelay calling Auth Server...`);
         },
+        onSuccess: (ctx) => {
+          const jwt = ctx.response.headers.get('set-auth-jwt')
+          console.log(`[DASHBOARD LAYOUT] - JWT token`)
+          console.log(`[DASHBOARD LAYOUT] - ${jwt}`)
+        }
       }
     });
 
