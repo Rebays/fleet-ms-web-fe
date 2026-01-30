@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Loader2, ArrowRight, ShieldAlert, Clock } from "lucide-react";
 import { signInAction } from "@/app/actions/signin";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { GithubSignInButton } from "./GithubSignInButton";
 
 export function LoginForm() {
   const [state, formAction, isPending] = useActionState(signInAction, null);
@@ -119,7 +120,7 @@ export function LoginForm() {
         )}
       </button>
       <GoogleSignInButton />
-      
+      <GithubSignInButton/>
     </form>
   );
 }

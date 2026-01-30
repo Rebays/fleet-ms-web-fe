@@ -1,9 +1,8 @@
 'use client';
-import { authRelay } from "@/better-auth/auth-client"; // Adjust path to your auth client
+import { authRelay } from "@/better-auth/auth-client"; 
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
-// You can use a Simple SVG for the Google Logo
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-4 h-4" xmlns="http://www.w3.org/2000/svg">
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -16,10 +15,16 @@ const GoogleIcon = () => (
 export function GoogleSignInButton() {
   const [isPending, setIsPending] = useState(false);
 
-  const handleSignIn = async () => {
-    await authRelay.signIn.social({
+  const handleSignIn =  () => {
+    console.log('google signin')
+    authRelay.signIn.social({
       provider: "google",
-      callbackURL: "http://localhost:3000/api/auth/callback/google", // Where to redirect after login
+      callbackURL: "http://localhost:3000", 
+      fetchOptions: {
+        onResponse(data){
+          console.log('any response')
+        }
+      }
 
     });
   };
@@ -36,7 +41,7 @@ export function GoogleSignInButton() {
       ) : (
         <>
           <GoogleIcon />
-          Sign in with Google
+          Continue with Google
         </>
       )}
     </button>
